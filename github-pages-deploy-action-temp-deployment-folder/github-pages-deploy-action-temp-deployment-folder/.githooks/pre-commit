@@ -1,0 +1,27 @@
+
+# Try to invoke PowerShell hook on Windows if available, otherwise run POSIX shell check
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/pre-commit.ps1" "$@"
+  exit $?
+elif command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/pre-commit.ps1" @(
+    "$@"
+  )
+  exit $?
+fi
+
+# Fallback: POSIX shell scanner
+#!/bin/sh
+PATTERN='github_pat_|GITHUB_TOKEN|PRIVATE[_-]?KEY|-----BEGIN PRIVATE KEY-----|aws_access_key_id|aws_secret_access_key|AKIA[0-9A-Z]{16}'
+
+echo "[pre-commit] scanning staged files for secrets (shell fallback)..."
+
+if git grep --cached -nE "$PATTERN" >/dev/null 2>&1; then
+  echo "ERROR: Potential secret detected in staged files:" >&2
+  git grep --cached -nE "$PATTERN" >&2
+  echo "Aborting commit. Remove secrets from staged files or reset them before committing." >&2
+  exit 1
+fi
+
+echo "[pre-commit] no obvious secrets found. Proceeding." 
+exit 0
