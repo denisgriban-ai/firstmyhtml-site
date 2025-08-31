@@ -23,4 +23,4 @@ jobs:
           # deploy the repository root (change to ./dist if you build first)
           folder: ./
           branch: gh-pages
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DEPLOY_TOKEN }}
